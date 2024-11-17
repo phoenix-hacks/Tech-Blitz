@@ -233,24 +233,22 @@
             document.getElementById('login-error').style.display = 'none';
 
             if (action === 'signup') {
-            document.getElementById('signup-container').style.display = 'block';
+                document.getElementById('signup-container').style.display = 'block';
             } else if (action === 'login') {
-            document.getElementById('login-container').style.display = 'block';
+                document.getElementById('login-container').style.display = 'block';
             } else if (action === 'todo') {
-            const loggedIn = sessionStorage.getItem('loggedIn');
+                const loggedIn = sessionStorage.getItem('loggedIn');
 
-            if (loggedIn === 'true') {
-                displayUserInfo(); 
-                document.getElementById('todo-container').style.display = 'block';
-            } else {
-                
-                alert('Please login first!');
-                document.getElementById('action-select').value = 'login';  
-                handleSelection(); 
+                if (loggedIn === 'true') {
+                    displayUserInfo(); 
+                    document.getElementById('todo-container').style.display = 'block';
+                } else {
+                    alert('Please login first!');
+                    document.getElementById('action-select').value = 'login';  
+                    handleSelection(); 
+                }
             }
-            }
-            }
-
+        }
 
         document.getElementById('signup-form').addEventListener('submit', function (event) {
             event.preventDefault();
@@ -260,10 +258,11 @@
             const password = document.getElementById('password-signup').value;
 
             const userData = { username, email, password };
-            localStorage.setItem('user', JSON.stringify(userData));
+            let users = JSON.parse(localStorage.getItem('users')) || [];
+            users.push(userData);
+            localStorage.setItem('users', JSON.stringify(users));
 
             alert('Sign-up successful! You can now login.');
-
             document.getElementById('action-select').value = 'login';
             handleSelection();
         });
@@ -273,12 +272,14 @@
 
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const storedUser = JSON.parse(localStorage.getItem('user'));
+            const users = JSON.parse(localStorage.getItem('users')) || [];
             const loginError = document.getElementById('login-error');
 
-            if (storedUser && storedUser.email === email && storedUser.password === password) {
+            const user = users.find(u => u.email === email && u.password === password);
+
+            if (user) {
                 sessionStorage.setItem('loggedIn', 'true');
-                sessionStorage.setItem('loggedUser', JSON.stringify(storedUser));
+                sessionStorage.setItem('loggedUser', JSON.stringify(user));
 
                 alert('Login successful!');
                 document.getElementById('action-select').value = 'todo';
@@ -289,21 +290,12 @@
         });
 
         function displayUserInfo() {
-            const loggedIn = sessionStorage.getItem('loggedIn');
-            const userInfoDiv = document.getElementById('user-info');
-
-            if (loggedIn === 'true') {
-                const loggedUser = JSON.parse(sessionStorage.getItem('loggedUser'));
-                if (loggedUser) {
-                    userInfoDiv.innerHTML = `Welcome, ${loggedUser.username}!`;
-                    loadUserTasks(loggedUser.email);  
-                } else {
-                    alert('Error: No user data found.');
-                    document.getElementById('action-select').value = 'login';
-                    handleSelection();
-                }
+            const loggedUser = JSON.parse(sessionStorage.getItem('loggedUser'));
+            if (loggedUser) {
+                document.getElementById('user-info').innerHTML = `Welcome, ${loggedUser.username}!`;
+                loadUserTasks(loggedUser.email);  
             } else {
-                alert('Please login first!');
+                alert('Error: No user data found.');
                 document.getElementById('action-select').value = 'login';
                 handleSelection();
             }
@@ -312,10 +304,8 @@
         function loadUserTasks(email) {
             const tasks = JSON.parse(localStorage.getItem(`tasks_${email}`)) || [];
             const todoTable = document.getElementById('todo-table');
-            const tableRows = todoTable.getElementsByTagName('tr');
 
-    
-            for (let i = tableRows.length - 1; i > 0; i--) {
+            for (let i = todoTable.rows.length - 1; i > 0; i--) {
                 todoTable.deleteRow(i);
             }
 
@@ -341,13 +331,13 @@
 
             const loggedUser = JSON.parse(sessionStorage.getItem('loggedUser'));
             const tasks = JSON.parse(localStorage.getItem(`tasks_${loggedUser.email}`)) || [];
-            const taskId = new Date().getTime();  
+            const taskId = new Date().getTime();
             const task = { id: taskId, text: taskValue };
 
             tasks.push(task);
             localStorage.setItem(`tasks_${loggedUser.email}`, JSON.stringify(tasks));
-            taskInput.value = ''; 
-            loadUserTasks(loggedUser.email); 
+            taskInput.value = '';
+            loadUserTasks(loggedUser.email);
         }
 
         function deleteTask(taskId) {
@@ -357,29 +347,31 @@
             localStorage.setItem(`tasks_${loggedUser.email}`, JSON.stringify(tasks));
             loadUserTasks(loggedUser.email);
         }
+
         const passwordInput = document.getElementById("password-signup");
         const toggleIcon = document.getElementById('toggleIcon');
         toggleIcon.addEventListener('click', () => {
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text'; 
-            toggleIcon.innerHTML = '&#128064;'; 
-        } else {
-            passwordInput.type = 'password'; 
-            toggleIcon.innerHTML = '&#128065;'; 
-        }
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text'; 
+                toggleIcon.innerHTML = '&#128064;';
+            } else {
+                passwordInput.type = 'password'; 
+                toggleIcon.innerHTML = '&#128065;';
+            }
         });
+
         const loginToggleIcon = document.getElementById("loginToggleIcon");
         const loginPasswordInput = document.getElementById("password");
-        loginToggleIcon.addEventListener('click',()=>{
-            if(loginPasswordInput.type == 'password'){
+        loginToggleIcon.addEventListener('click', () => {
+            if (loginPasswordInput.type == 'password') {
                 loginPasswordInput.type = 'text';
                 loginToggleIcon.innerHTML = '&#128064;';
-            }
-            else{
+            } else {
                 loginPasswordInput.type = 'password';
-                loginToggleIcon.innerHTML = '&#128065'
+                loginToggleIcon.innerHTML = '&#128065';
             }
-        })
+        });
+
         function editTask(taskId) {
             const loggedUser = JSON.parse(sessionStorage.getItem('loggedUser'));
             const tasks = JSON.parse(localStorage.getItem(`tasks_${loggedUser.email}`)) || [];
@@ -390,8 +382,8 @@
                     task.text = newTaskText.trim();
                     localStorage.setItem(`tasks_${loggedUser.email}`, JSON.stringify(tasks));
                     loadUserTasks(loggedUser.email);
-        }
-        } else {
+                }
+            } else {
                 alert('Task not found!');
             }
         }
